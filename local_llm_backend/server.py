@@ -14,7 +14,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 device = 'cpu'
 
 model_to_path = {
-  'DeepSeek-R1-Distill-Llama-7B': '/cephfs/wenchanggao/large-models/DeepSeek-R1-Distill-Llama-7B'
+  'deepseek-ai/DeepSeek-R1-Distill-Llama-8B': '/cephfs/wenchanggao/large-models/DeepSeek-R1-Distill-Llama-8B'
 }
 
 def receive_full_message(c_socket: socket.socket, buff_size: int=1028) -> bytes: 
@@ -43,7 +43,7 @@ def start_server(port: int) -> socket.socket:
   print(f'Listening on port {port}') 
   return s_socket
 
-def load_local_model(model_name: str, device_id: int) -> tuple[AutoTokenizer, AutoModelForCausalLM]:
+def load_local_model(model_name: str) -> tuple[AutoTokenizer, AutoModelForCausalLM]:
   '''
   Loads local model into GPU <device_id>. 
 
@@ -55,8 +55,8 @@ def load_local_model(model_name: str, device_id: int) -> tuple[AutoTokenizer, Au
     (<tokenizer>, <model>): the loaded tokenizer and model
   '''
   path = model_to_path[model_name]
-  tokenizer = AutoTokenizer.from_pretrained(path, device_map=f'cuda:{device_id}') 
-  model = AutoModelForCausalLM.from_pretrained(path, device_map=f'cuda:{device_id}')
+  tokenizer = AutoTokenizer.from_pretrained(path)
+  model = AutoModelForCausalLM.from_pretrained(path).to(device)
   return (tokenizer, model)
 
 def get_response(tokenizer: AutoTokenizer, model: AutoModelForCausalLM, prompt: str, max_length=1000, temperature=0.7): 
@@ -81,7 +81,7 @@ def server(port: int, model_name: str, max_length: int, temperature: float) -> N
   Returns: 
     None
   '''
-  assert model_name in model_to_path, 'Unknown model name'
+  assert model_name in model_to_path.keys(), 'Unknown model name'
   tokenizer, model = load_local_model(model_name)
   s_socket = start_server(port) 
   while True: 
@@ -109,8 +109,8 @@ def main():
   else: 
     os.environ['CUDA_VISIBLE_DEVICES'] = "" 
     device = torch.device('cpu')
-  server(port=args.port, model_name=args.model)
+  server(port=args.port, model_name=args.model, max_length=args.max_length, temperature=args.temperature)
 
 
 if __name__ == '__main__':  
-  start_server()
+  main()
