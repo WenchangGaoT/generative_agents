@@ -217,10 +217,19 @@ class Persona:
     self.scratch.curr_time = curr_time
 
     # Main cognitive sequence begins here. 
+    # Modified to check time cost of congnitive sequence
+    perceive_start = time.time() 
     perceived = self.perceive(maze)
+    perceive_end = time.time()
+    retrieve_start = time.time()
     retrieved = self.retrieve(perceived)
+    retrieve_end = time.time() 
+    plan_start = time.time()
     plan = self.plan(maze, personas, new_day, retrieved)
+    plan_end = time.time()
+    reflect_start = time.time()
     self.reflect()
+    reflect_end = time.time()
 
     # <execution> is a triple set that contains the following components: 
     # <next_tile> is a x,y coordinate. e.g., (58, 9)
@@ -228,7 +237,21 @@ class Persona:
     # <description> is a string description of the movement. e.g., 
     #   writing her next novel (editing her novel) 
     #   @ double studio:double studio:common room:sofa
-    return self.execute(maze, personas, plan)
+    # return self.execute(maze, personas, plan)
+    execute_start = time.time()
+    executed = self.execute(maze, personas, plan)
+    execute_end = time.time()
+
+    # Append time consumption to each log file
+    cog_steps = ['perceive', 'retrieve', 'plan', 'reflect', 'execute']
+    for c_step in cog_steps:
+      c_step_start = eval(f'{c_step}_start')
+      c_step_end = eval(f'{c_step}_end')
+      with open(f'../../logs/{c_step}_log.txt', 'a') as f:
+        f.write(str(c_step_end - c_step_start) + ' ')
+    
+
+    return executed
 
 
   def open_convo_session(self, convo_mode): 
